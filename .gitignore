@@ -1,0 +1,2 @@
+# Ignore the INBOX.mbox folder since it's a large file
+/INBOX.mbox
