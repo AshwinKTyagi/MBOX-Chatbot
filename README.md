@@ -19,6 +19,8 @@ My current file is ~2GB and so I don't want to pass all my emails through an LLM
 
     This can help quantify how many tokens are needed for an entire mbox
 
+- Create vector embeddings for each email and only check mbox when we need to pull on actual text
+
 
 ### 2. Storage of Analysis
 

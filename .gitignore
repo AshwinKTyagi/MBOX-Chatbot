@@ -1,2 +1,6 @@
 # Ignore the INBOX.mbox folder since it's a large file
 /INBOX.mbox
+/qdrant_storage
+/src/__pycache__
+/cache
+.env
