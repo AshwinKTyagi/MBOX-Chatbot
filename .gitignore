@@ -2,5 +2,6 @@
 /INBOX.mbox
 /qdrant_storage
 /src/__pycache__
+/src/cache
 /cache
 .env

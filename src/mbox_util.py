@@ -8,7 +8,7 @@ import re
 from fastembed import TextEmbedding
 
 # Path to your mbox file
-mbox_file = './INBOX.mbox/mbox'
+mbox_file = '../INBOX.mbox/mbox'
 mbox = mailbox.mbox(mbox_file)
 
 load_dotenv()
