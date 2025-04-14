@@ -79,10 +79,8 @@ def extract_metadata(idx = int):
 
 """
     Create Vector Embeddings
-    
-    
 """
-def create_vector_embedding(idx = int):
+def create_vector_embedding_from_idx(idx = int):
     # start_time = datetime.now()
     message = get_message(idx)
     

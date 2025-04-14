@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 from tqdm import tqdm
 from qdrant_client import QdrantClient
+from qdrant_client.models import Filter, FieldCondition, MatchValue, Record
 from dotenv import load_dotenv
 
 import csv_logging_repository
@@ -118,12 +119,9 @@ class VectorDBRepository:
             print("\nProcess timed out.")
         except Exception as e:
             print(f"\nAn error occurred: {e}")
-
-    
-    
     
     # -----
-    # Document Management
+    # Document Add Management
     # -----
 
     def add_document(self, document_id: int, vector: list, payload: dict = {}, skipped_count: int = 0):
@@ -131,6 +129,7 @@ class VectorDBRepository:
             Add a document to a buffer.
         """
         assert isinstance(payload, dict), "Payload must be a dictionary"
+        assert len(vector) == 384, "Vector must be of length 384"
         
         self._buffer.append({
             "id": document_id,
@@ -160,9 +159,8 @@ class VectorDBRepository:
         self._buffer.clear()
 
     # ----
-    # Search
+    # Vector Retrieval
     # ----
-
 
     def search(self, vector: list, limit: int = 5):
         """
@@ -174,6 +172,17 @@ class VectorDBRepository:
             limit=limit
         )
         return results
+    
+    def get_document(self, document_id: int) -> Record:
+        """
+            Retrieve a document from the collection.
+        """
+        result = self.client.retrieve(
+            collection_name=self.collection_name,
+            ids=[document_id],
+            with_vectors=True,
+        )
+        return result[0]
     
 
 
