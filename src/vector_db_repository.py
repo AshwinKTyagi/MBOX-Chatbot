@@ -18,8 +18,7 @@ class VectorDBRepository:
         self.collection_name = collection_name
         self.batch_size = batch_size
         self._buffer = []
-
-
+        
     # -----
     # Collection Management
     # -----
@@ -172,6 +171,19 @@ class VectorDBRepository:
             limit=limit
         )
         return results
+    
+    def context_search(self, text: str, limit: int = 5):
+        
+        text_embedding = mbox_util.create_vector_embedding(data=text)
+        
+        search_result = self.client.search(
+            collection_name=self.collection_name,
+            query_vector=text_embedding,
+            limit=limit,
+            with_payload=True,
+        )
+        
+        return search_result
     
     def get_document(self, document_id: int) -> Record:
         """

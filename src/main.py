@@ -6,16 +6,32 @@ from datetime import datetime
 from vector_db_repository import VectorDBRepository
 import csv_logging_repository
 import mbox_util
-import signal
-
 
 load_dotenv()
 
-def timeout_handler(signum, frame):
-    print("Timeout occurred. Exiting.")
-    raise TimeoutError("Timeout occurred while processing the email.")
-
-        
 if __name__ == "__main__":
-    #test search
-    pass
+
+
+    vector_db = VectorDBRepository(
+        collection_name="emails",
+        batch_size=1000
+    )
+    
+    text = input("Query the DB: ")
+    
+
+
+    start_time = datetime.now()
+    out = vector_db.context_search(text=text, limit=5)
+    
+    for item in out:
+        
+        print(item.id, item.score, 
+              "\nsubject:", item.payload["subject"],
+              "\nfrom:", item.payload["from"],)
+        
+    end_time = datetime.now()
+    elapsed_time = end_time - start_time
+    print(f"Elapsed time: {elapsed_time.total_seconds()}s")
+
+    
