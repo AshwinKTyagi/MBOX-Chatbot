@@ -49,7 +49,11 @@ def populate_vector_collection(vector_db: VectorDBRepository, start_point: int =
     elapsed_time = end - start
     print(f"Elapsed time: {elapsed_time.total_seconds()}s")
     
-if __name__ == "__main__":
+def init_vector_db():
+    """
+        Initialize the vector database. Run only once to create the collection and populate it with all the emails from the mbox file.
+        This function will read the mbox file, extract metadata and data, create vector embeddings, and store them in the vector database.
+    """
     try:
         batch_size = 100
         vector_db = VectorDBRepository(collection_name="emails", batch_size=batch_size)
@@ -64,7 +68,7 @@ if __name__ == "__main__":
             print("No Previous Uploads Logged")
             
         start_point = int(processed) + int(skipped)
-        print(f"Start Point: {start_point}")
+        print(f"Start Point: {start_point}\n")
         custom_start = input("Enter custom start point (or press Enter to use default): ")
         if custom_start:
             start_point = int(custom_start)
