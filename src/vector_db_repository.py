@@ -13,7 +13,7 @@ load_dotenv()
 QDRANT_URL = "http://localhost:6333"
 
 class VectorDBRepository:
-    def __init__(self, collection_name: str, batch_size: int = 1000):
+    def __init__(self, collection_name: str, batch_size: int = 500):
         self.client = QdrantClient(url=QDRANT_URL)
         self.collection_name = collection_name
         self.batch_size = batch_size
@@ -63,54 +63,61 @@ class VectorDBRepository:
         """
         return self.client.count(collection_name=self.collection_name).count
     
-    def populate_collection(self, start_point: int = 0, skipped_count: int = 0):
+    def populate_collection(self):
         """
             Populate the collection with data. This method is a placeholder and should be implemented as needed.
         """
         try:
+            # Read previous processing stats from the CSV log
             stats = csv_logging_repository.read_stats()
             if stats:
                 processed, skipped = stats
-                total = int(processed) + int(skipped)
+                processed = int(processed)
+                skipped = int(skipped)
                 print(f"Processed: {processed}, Skipped: {skipped}")
             else:
                 processed, skipped = 0, 0
                 print("No Previous Uploads Logged")
                 
+            # Determine the starting point for processing
             start_point = int(processed) + int(skipped)
-            print(f"Start Point: {start_point}\n")
-            custom_start = input("Enter custom start point (or press Enter to use default): ")
-            if custom_start:
-                start_point = int(custom_start)
-                print(f"Custom Start Point: {start_point}")
-                
+            print(f"Starting from message index: {start_point}")
+            
+            # Check if the collection exists and handle accordingly
             if self.collection_exists():
                 vdb_count = self.count()
                 print(f"Collection already exists with {vdb_count} documents.")
-                return
+            else:
+                self.create_collection()
             
+            # Start processing and embedding emails
             start = datetime.now()
             mbox_count = mbox_util.get_mbox_count()
             
             print("Total messages in mbox:", mbox_count)
-            self.create_collection()
+            if start_point >= mbox_count:
+                print("No new messages to process. Start point is greater than or equal to the total message count.")
+                return
+            
+            # Iterate through the emails and process them
             for i in tqdm(range(start_point, mbox_count), desc="Embedding Email", unit="email"):
                 try:
                     metadata, data = mbox_util.extract_metadata(i)        
                     if metadata is None or data is None:
                         print(f"Skipping message {i} due to missing metadata or data.")
-                        skipped_count += 1
+                        skipped += 1
                         continue
                     vector = mbox_util.create_vector_embedding(data=data)
                                 
-                    self.add_document(document_id=i, vector=vector, payload=metadata, skipped_count=skipped_count)
+                    self.add_document(document_id=i, vector=vector, payload=metadata, skipped_count=skipped)
                     
                 except Exception as e:
                     print(f"Error processing message {i}: {e}")
                     return
+            # Calculate and display elapsed time
             end = datetime.now()
-            elapsed_time = end - start
-            print(f"Elapsed time: {elapsed_time}s")
+            elapsed_time = (end - start).total_seconds()
+            print(f"Elapsed time: {elapsed_time:.2f} seconds")
         
         except KeyboardInterrupt:
             print("\nProcess interrupted by user.")
@@ -207,16 +214,15 @@ if __name__ == "__main__":
         print("2. Delete Collection")
         print("3. Check if Collection Exists")
         print("4. Count Documents in Collection")
-        print("5. Exit")
+        print("5. Get Document by ID") 
+        print("6. Exit")
         
         choice = input("Enter your choice: ")
         print()
         match choice:
-            case "1":
-                if vdb.create_collection():
-                    print("Collection created successfully.")
-                else:
-                    print("Collection already exists.")
+            case "1":                    
+                vdb.populate_collection()
+                
             case "2":
                 vdb.delete_collection()
                 print("Collection deleted successfully.")
@@ -231,6 +237,17 @@ if __name__ == "__main__":
                     continue
                 print(f"Number of documents in collection: {int(vdb.count())}")
             case "5":
+                if not vdb.collection_exists():
+                    print("Collection does not exist.")
+                    continue
+                document_id = int(input("Enter document ID: "))
+                document = vdb.get_document(document_id)
+                if document:
+                    print(f"Document ID: {document.id}")
+                    print(f"Document Payload: {document.payload}")
+                else:
+                    print("Document not found.")
+            case "6":
                 print("Exiting...")
                 break
             case _:

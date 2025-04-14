@@ -18,20 +18,20 @@ if __name__ == "__main__":
     )
     
     text = input("Query the DB: ")
-    
-
 
     start_time = datetime.now()
     out = vector_db.context_search(text=text, limit=5)
-    
+    print(len(out))
     for item in out:
         
         print(item.id, item.score, 
               "\nsubject:", item.payload["subject"],
-              "\nfrom:", item.payload["from"],)
+              "\nfrom:", item.payload["from"],
+              "\nDate:", item.payload["date"],)
+
         
     end_time = datetime.now()
     elapsed_time = end_time - start_time
     print(f"Elapsed time: {elapsed_time.total_seconds()}s")
 
-    
+    pass

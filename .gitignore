@@ -3,5 +3,7 @@
 /qdrant_storage
 /src/__pycache__
 /src/cache
+/fastapi-gmail/__pycache__
 /cache
 .env
+client_secret_68493654799-tpjidpao9uatiaikb7vflupatfckjbio.apps.googleusercontent.com.json
