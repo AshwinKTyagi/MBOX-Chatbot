@@ -15,75 +15,7 @@ def timeout_handler(signum, frame):
     print("Timeout occurred. Exiting.")
     raise TimeoutError("Timeout occurred while processing the email.")
 
-
-def populate_vector_collection(vector_db: VectorDBRepository, start_point: int = 0, skipped_count: int = 0):
-    """
-        Populate the vector collection with email data.
-    """
-    start = datetime.now()
-    mbox_count = mbox_util.get_mbox_count()
-    
-    print("Total messages in mbox:", mbox_count)
-    
-    vector_db.create_collection()
-
-    for i in tqdm(range(start_point, mbox_count), desc="Embedding Email", unit="email"):
-        try:
-            
-            metadata, data = mbox_util.extract_metadata(i)        
-            if metadata is None or data is None:
-                print(f"Skipping message {i} due to missing metadata or data.")
-                skipped_count += 1
-                continue
-            vector = mbox_util.create_vector_embedding(data=data)
-                        
-            vector_db.add_document(document_id=i, vector=vector, payload=metadata, skipped_count=skipped_count)
-            
-    
-        except Exception as e:
-            print(f"Error processing message {i}: {e}")
-            return
-
-
-    end = datetime.now()
-    elapsed_time = end - start
-    print(f"Elapsed time: {elapsed_time.total_seconds()}s")
-    
-def init_vector_db():
-    """
-        Initialize the vector database. Run only once to create the collection and populate it with all the emails from the mbox file.
-        This function will read the mbox file, extract metadata and data, create vector embeddings, and store them in the vector database.
-    """
-    try:
-        batch_size = 100
-        vector_db = VectorDBRepository(collection_name="emails", batch_size=batch_size)
         
-        stats = csv_logging_repository.read_stats()
-        if stats:
-            processed, skipped = stats
-            total = int(processed) + int(skipped)
-            print(f"Processed: {processed}, Skipped: {skipped}")
-        else:
-            processed, skipped = 0, 0
-            print("No Previous Uploads Logged")
-            
-        start_point = int(processed) + int(skipped)
-        print(f"Start Point: {start_point}\n")
-        custom_start = input("Enter custom start point (or press Enter to use default): ")
-        if custom_start:
-            start_point = int(custom_start)
-            print(f"Custom Start Point: {start_point}")
-        
-        if vector_db.collection_exists():
-            vdb_count = vector_db.count()
-            print(f"Collection already exists with {vdb_count} documents.")
-            
-            
-        populate_vector_collection(vector_db=vector_db, start_point=start_point, skipped_count=int(skipped))
-        
-    except KeyboardInterrupt:
-        print("\nProcess interrupted by user.")
-    except TimeoutError:
-        print("\nProcess timed out.")
-    except Exception as e:
-        print(f"\nAn error occurred: {e}")
+if __name__ == "__main__":
+    #test search
+    pass

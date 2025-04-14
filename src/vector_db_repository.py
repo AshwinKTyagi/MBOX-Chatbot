@@ -1,7 +1,11 @@
 import os
+from datetime import datetime
+from tqdm import tqdm
 from qdrant_client import QdrantClient
-import csv_logging_repository
 from dotenv import load_dotenv
+
+import csv_logging_repository
+import mbox_util
 
 load_dotenv()
 
@@ -59,6 +63,65 @@ class VectorDBRepository:
         """
         return self.client.count(collection_name=self.collection_name).count
     
+    def populate_collection(self, start_point: int = 0, skipped_count: int = 0):
+        """
+            Populate the collection with data. This method is a placeholder and should be implemented as needed.
+        """
+        try:
+            stats = csv_logging_repository.read_stats()
+            if stats:
+                processed, skipped = stats
+                total = int(processed) + int(skipped)
+                print(f"Processed: {processed}, Skipped: {skipped}")
+            else:
+                processed, skipped = 0, 0
+                print("No Previous Uploads Logged")
+                
+            start_point = int(processed) + int(skipped)
+            print(f"Start Point: {start_point}\n")
+            custom_start = input("Enter custom start point (or press Enter to use default): ")
+            if custom_start:
+                start_point = int(custom_start)
+                print(f"Custom Start Point: {start_point}")
+                
+            if self.collection_exists():
+                vdb_count = self.count()
+                print(f"Collection already exists with {vdb_count} documents.")
+                return
+            
+            start = datetime.now()
+            mbox_count = mbox_util.get_mbox_count()
+            
+            print("Total messages in mbox:", mbox_count)
+            self.create_collection()
+            for i in tqdm(range(start_point, mbox_count), desc="Embedding Email", unit="email"):
+                try:
+                    metadata, data = mbox_util.extract_metadata(i)        
+                    if metadata is None or data is None:
+                        print(f"Skipping message {i} due to missing metadata or data.")
+                        skipped_count += 1
+                        continue
+                    vector = mbox_util.create_vector_embedding(data=data)
+                                
+                    self.add_document(document_id=i, vector=vector, payload=metadata, skipped_count=skipped_count)
+                    
+                except Exception as e:
+                    print(f"Error processing message {i}: {e}")
+                    return
+            end = datetime.now()
+            elapsed_time = end - start
+            print(f"Elapsed time: {elapsed_time}s")
+        
+        except KeyboardInterrupt:
+            print("\nProcess interrupted by user.")
+        except TimeoutError:
+            print("\nProcess timed out.")
+        except Exception as e:
+            print(f"\nAn error occurred: {e}")
+
+    
+    
+    
     # -----
     # Document Management
     # -----
@@ -95,6 +158,11 @@ class VectorDBRepository:
             points=self._buffer
         )
         self._buffer.clear()
+
+    # ----
+    # Search
+    # ----
+
 
     def search(self, vector: list, limit: int = 5):
         """
