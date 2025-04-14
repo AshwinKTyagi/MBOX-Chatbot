@@ -39,6 +39,10 @@ class VectorDBRepository:
         """
             Delete the collection from the database.
         """
+        csv_logging_repository.update_csv(
+            processed_increment=0,
+            skipped_increment=0
+        )
         self.client.delete_collection(
             collection_name=self.collection_name
         )

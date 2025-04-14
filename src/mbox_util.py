@@ -11,6 +11,8 @@ from fastembed import TextEmbedding
 mbox_file = '../INBOX.mbox/mbox'
 mbox = mailbox.mbox(mbox_file)
 
+embedding_model = TextEmbedding(model_name="BAAI/bge-small-en", cache_dir="./cache")
+
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
@@ -82,9 +84,6 @@ def extract_metadata(idx = int):
 """
 def create_vector_embedding(idx = int):
     # start_time = datetime.now()
-    
-    embedding_model = TextEmbedding(model_name="BAAI/bge-small-en", cache_dir="./cache")
-
     message = get_message(idx)
     
     embedding_generator = embedding_model.embed(message)
@@ -98,8 +97,6 @@ def create_vector_embedding(idx = int):
 
 def create_vector_embedding(data = str):
     # start_time = datetime.now()
-    
-    embedding_model = TextEmbedding(model_name="BAAI/bge-small-en", cache_dir="./cache")
 
     embedding_generator = embedding_model.embed(data)
     embedding = list(embedding_generator)
