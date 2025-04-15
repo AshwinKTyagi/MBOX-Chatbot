@@ -7,6 +7,9 @@ import mailbox
 import re
 from fastembed import TextEmbedding
 from bs4 import BeautifulSoup
+import fitz
+from docx import Document
+from io import BytesIO
 
 
 # Path to your mbox file
@@ -40,6 +43,19 @@ def clean_html(html):
 
     return clean_text
 
+def extract_text_from_pdf_bytes(pdf_bytes):
+    text = ''
+    with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+        for page in doc:
+            text += page.get_text()
+    return text.strip()
+
+def extract_text_from_docx_bytes(docx_bytes):
+    text = ''
+    doc = Document(BytesIO(docx_bytes))
+    for para in doc.paragraphs:
+        text += para.text + '\n'
+    return text.strip()
 
 def get_message(idx = int):
     message = ''
@@ -47,27 +63,42 @@ def get_message(idx = int):
     
     if email_obj.is_multipart():
         for part in email_obj.walk():
+            if part.get_content_disposition() == 'attachment':
+                content_type = part.get_content_type()
+                filename = part.get_filename()
+                message += "[" + str(content_type) + str(filename) + "]\n"
+            
             ct = part.get_content_type()
             if ct == 'text/plain':
-                try:
-                    message += part.get_payload(decode=True).decode(part.get_content_charset() or 'utf-8', errors='replace') + '\n'
-                except Exception:
-                    pass    
-                    
-        if not message:
-            for part in email_obj.walk():
-                if part.get_content_type() == 'text/html':
-                    html_payload = part.get_payload(decode=True)
-                    if html_payload:
-                        html_str = html_payload.decode(part.get_content_charset() or 'utf-8', errors='replace')
-                        message = clean_html(html_str)
-                        break
+                message += part.get_payload(decode=True).decode(part.get_content_charset() or 'utf-8', errors='replace') + '\n'
+            elif ct == 'text/html':
+                html_payload = part.get_payload(decode=True)
+
+                if html_payload:
+                    html_str = html_payload.decode(part.get_content_charset() or 'utf-8', errors='replace') + '\n'
+                    message += clean_html(html_str)
+            elif ct == 'application/pdf':
+                pdf_payload = part.get_payload(decode=True)
+                message += extract_text_from_pdf_bytes(pdf_payload) + '\n'
+            elif ct == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                docx_payload = part.get_payload(decode=True)
+                message += extract_text_from_docx_bytes(docx_payload) + '\n'
+            
     else:
         payload = email_obj.get_payload(decode=True)
-        if payload:
+        ct = email_obj.get_content_type()
+        
+        if payload is None:
+            return message
+        elif ct == 'text/plain':
             message = payload.decode(email_obj.get_content_charset() or 'utf-8', errors='replace')
- 
-    return str(message)
+        elif ct == 'text/html':
+            html_payload = payload
+            if html_payload:
+                message = html_payload.decode(email_obj.get_content_charset() or 'utf-8', errors='replace')
+
+
+    return str(clean_html(message))
 
 def clean_addr(addr = str):
     if not addr:
@@ -138,8 +169,9 @@ if __name__ == "__main__":
         print("1. Get total number of emails")
         print("2. Extract metadata from an email")
         print("3. Get raw email message")
-        print("4. Create vector embedding for an email")
-        print("5. Exit")
+        print("4. Get cleaned email message")
+        print("5. Create vector embedding for an email")
+        print("6. Exit")
         
         choice = input("Enter your choice: ")
         
@@ -157,12 +189,15 @@ if __name__ == "__main__":
                     print("No metadata found for the given index.")
             case "3":
                 idx = int(input("Enter email index: "))
-                print(get_message(idx))
+                print(mbox[idx])
             case "4":
+                idx = int(input("Enter email index: "))
+                print(get_message(idx))
+            case "5":
                 idx = int(input("Enter email index: "))
                 vector = create_vector_embedding_from_idx(idx)
                 print(f"Vector embedding: {vector}")
-            case "5":
+            case "6":
                 print("Exiting...")
                 break
             case _:

@@ -107,13 +107,20 @@ class VectorDBRepository:
                         print(f"Skipping message {i} due to missing metadata or data.")
                         skipped += 1
                         continue
-                    vector = mbox_util.create_vector_embedding(data=data)
+                    
+                    embed_data = str(metadata) + "\n" + str(data)
+                    vector = mbox_util.create_vector_embedding(data=embed_data)
                                 
                     self.add_document(document_id=i, vector=vector, payload=metadata, skipped_count=skipped)
                     
                 except Exception as e:
                     print(f"Error processing message {i}: {e}")
                     return
+                
+            # Flush any remaining documents in the buffer
+            if self._buffer:
+                self.flush(skipped)    
+            
             # Calculate and display elapsed time
             end = datetime.now()
             elapsed_time = (end - start).total_seconds()
