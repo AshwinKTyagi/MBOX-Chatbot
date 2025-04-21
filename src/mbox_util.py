@@ -1,5 +1,5 @@
 import hashlib
-import os
+import os, pathlib
 from dotenv import load_dotenv
 from datetime import datetime
 from dateutil import parser
@@ -13,7 +13,8 @@ from io import BytesIO
 
 
 # Path to your mbox file
-mbox_file = '../INBOX.mbox/mbox'
+BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
+mbox_file = os.path.join(BASE_DIR, 'INBOX.mbox/mbox') 
 mbox = mailbox.mbox(mbox_file)
 
 embedding_model = TextEmbedding(model_name="BAAI/bge-small-en", cache_dir="./cache")

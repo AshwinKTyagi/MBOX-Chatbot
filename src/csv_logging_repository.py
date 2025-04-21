@@ -1,7 +1,8 @@
 import csv
-import os
+import os, pathlib
 
-CSV_FILE = 'process_log.csv'
+BASE_DIR = pathlib.Path(__file__).resolve().parent
+CSV_FILE = os.path.join(BASE_DIR, 'process_log.csv')
 
 def init_csv():
     if not os.path.exists(CSV_FILE):

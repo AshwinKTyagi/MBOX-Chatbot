@@ -108,7 +108,9 @@ class VectorDBRepository:
                         skipped += 1
                         continue
                     
-                    embed_data = str(metadata) + "\n" + str(data)
+                    #build embedding data
+                    embed_data = "From: " + metadata["from"] + "\nSubject: " + metadata["subject"] + "\nDate: " + metadata["date"] + "\n\n"
+                    embed_data += str(data)
                     vector = mbox_util.create_vector_embedding(data=embed_data)
                                 
                     self.add_document(document_id=i, vector=vector, payload=metadata, skipped_count=skipped)
