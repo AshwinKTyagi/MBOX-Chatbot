@@ -26,7 +26,6 @@ My current file is ~2GB and so I don't want to pass all my emails through an LLM
 
 I will not want to use cloud storage unless I am deploying this as an actual product. 
 
-- For now just host some NoSQL db locally for embeddings 
-
+- For now I am using a local Qdrant cluster
     
 
